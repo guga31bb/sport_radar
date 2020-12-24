@@ -17,7 +17,8 @@ weeks <- games$weeks$games
 all <- map_df(1 : 17, function(x) {
   
   weeks[[x]] %>%
-    as_tibble()
+    as_tibble() %>%
+    mutate(week = x)
   
 })
 
