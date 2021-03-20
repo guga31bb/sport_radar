@@ -13,8 +13,8 @@ season_pbp <- readRDS(url("https://raw.githubusercontent.com/guga31bb/nflfastR-d
   filter(!is.na(posteam), !is.na(epa), !is.na(down), rush == 1 | pass == 1) %>%
   filter(between(vegas_wp, .02, .98))
 
-player = "Chris Jones"
-offense = 0
+player = "Chris Carson"
+offense = 1
 
 joined <- season_pbp %>% 
   inner_join(participation, by=c("home_team", "away_team", "play_id", "week")) %>%
