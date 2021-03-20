@@ -10,29 +10,21 @@ participation <- readRDS("data/participation_2020.rds") %>%
   select(play_id, week, home_team, away_team, home_names, away_names)
 
 season_pbp <- readRDS(url("https://raw.githubusercontent.com/guga31bb/nflfastR-data/master/data/play_by_play_2020.rds")) %>%
-  filter(!is.na(posteam), !is.na(epa), !is.na(down), rush == 1 | pass == 1)
-  # filter(between(vegas_wp, .025, .975))
+  filter(!is.na(posteam), !is.na(epa), !is.na(down), rush == 1 | pass == 1) %>%
+  filter(between(vegas_wp, .02, .98))
 
-player = "Chris Carson"
-offense = 1
+player = "Chris Jones"
+offense = 0
 
 joined <- season_pbp %>% 
-  left_join(participation, by=c("home_team", "away_team", "play_id", "week")) %>%
+  inner_join(participation, by=c("home_team", "away_team", "play_id", "week")) %>%
   mutate(
     split = if_else(
       stringr::str_detect(home_names, player) | stringr::str_detect(away_names, player),
       1,
       0),
     split = if_else(is.na(split), 0, split)
-  ) %>%
-  # since no participation data yet
-  mutate(
-    split = case_when(
-      home_team == "LA" & away_team == "SEA" ~ 0,
-      TRUE ~ split
-    )
-  ) %>%
-  filter(down != 4)
+  ) 
 
 if (offense == 1) {
   tm = pull(joined %>% filter(split==1) %>% slice(1), posteam)
@@ -63,7 +55,7 @@ earlyp <- pbp %>% filter((down == 1 | down ==2) & pass==1) %>% group_by(split) %
 
 late <- pbp %>% filter(down==3  | down == 4) %>% group_by(split) %>% summarize(
   epa = mean(epa), success=mean(success), p=mean(pass), play=n(), fd=mean(first_down))%>%
-  mutate(rowname="Third down", type=7)
+  mutate(rowname="Third/fourth down", type=7)
 
 type <- pbp %>% group_by(split, pass) %>% summarize(
   epa = mean(epa), success=mean(success), p=mean(pass), play=n(), fd=mean(first_down)) %>%
@@ -82,7 +74,7 @@ table <- bound%>%  select(split, rowname, epa, success, fd, play) %>%
     epa = md("**EPA/<br>play**"), fd=md("**1st down<br>rate**"), success = md("**Success<br>rate**"), play = md("**Plays**")) %>%
   cols_align(align = "center") %>%
   tab_source_note(
-    md(glue::glue("Win prob between 2.5% and 97.5% | Table: @benbbaldwin <br> Data: @nflfastR and Sportradar | {max(pbp$season)} through week {max(pbp$week)}"))) %>%
+    md(glue::glue("Win prob between 2% and 98% | Table: @benbbaldwin <br> Data: @nflfastR and Sportradar | {max(pbp$season)} through week {max(pbp$week)}"))) %>%
   tab_header(title = paste(tm, "splits with", player, "on and off field")) %>%
   tab_style(
     style = list(
@@ -96,6 +88,4 @@ table
 
 table %>%
   gtsave("results/on_off.png")
-
-
 
